@@ -12,26 +12,26 @@ class BlockType(Enum):
 
 #Takes a single block of markdown text as input and returns the blocktype enum
 def block_to_block_type(markdown):
-    #TODO
-    #Split the string on newline to check each line
-    #Implement count for ordered list to make sure it's in order 1 > 2 > 3 etc
-    headings = ["# ", "## ", "### ", "#### ", "##### ", "###### "]
-    splitted = markdown.split("\n")
-    count = 1
-    for split in splitted:
-        print(split)
-        if split.startswith(">"):
-            return BlockType.QUOTE
-        elif split.startswith("```") and markdown.endswith("```"):
-            return BlockType.CODE
-        elif split.startswith("- "):
-            return BlockType.UNORDERED_LIST
-        elif re.match(rf"{count}+\. ", split):
-            print(split)
-            print('made it')
+    split = markdown.split("\n")
+    if markdown.startswith(("# ", "## ", "### ", "#### ", "##### ", "###### ")):
+        return BlockType.HEADING
+    if len(split) > 1 and split[0].startswith("```") and split[-1].startswith("```"):
+        return BlockType.CODE
+    if markdown.startswith(">"):
+        for s in split:
+            if not s.startswith(">"):
+                return BlockType.PARAGRAPH
+        return BlockType.QUOTE
+    if markdown.startswith("- "):
+        for s in split:
+            if not s.startswith("- "):
+                return BlockType.PARAGRAPH
+        return BlockType.UNORDERED_LIST
+    if markdown.startswith("1. "):
+        count = 1
+        for s in split:
+            if not s.startswith(f"{count}. "):
+                return BlockType.PARAGRAPH
             count += 1
-            return BlockType.ORDERED_LIST
-        elif split.startswith(tuple(headings)):
-            return BlockType.HEADING
-        else:
-            return BlockType.PARAGRAPH
+        return BlockType.ORDERED_LIST
+    return BlockType.PARAGRAPH

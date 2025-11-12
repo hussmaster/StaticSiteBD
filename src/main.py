@@ -1,19 +1,28 @@
-from textnode import TextNode, TextType
-from htmlnode import HTMLNode, LeafNode, ParentNode
-from delimiter import split_nodes_delimiter, split_nodes_link, split_nodes_image
-from extractLinks import extract_markdown_images, extract_markdown_links
-from converter import *
-from block import *
 from htmlconverter import *
 
-import os, shutil
+import os, shutil, sys
+
+
+dir_path_static = "./static/"
+dir_path_public = "./docs/"
+dir_path_content = "./content/"
+template_path = "./template.html"
+basepath = "/"
+
+if len(sys.argv) <= 1:
+    basepath = "/"
+else:
+    basepath = sys.argv[1]
+    if not basepath.endswith("/"):
+        basepath += "/"
+
 
 
 def main():
     #Copy static files to public directory
-    static_to_public("static/", "public/")
+    static_to_public(dir_path_static, dir_path_public)
     #Grabs H1 header title from index.md
-    generate_pages_recursive("content/", "template.html", "public/")
+    generate_pages_recursive(dir_path_content, template_path, dir_path_public, basepath)
 
 
 #Recursive function that copies all contents from sourceDir to destDir
@@ -80,13 +89,14 @@ def generate_page(from_path, template_path, dest_path):
         file.write(contentReplace)
 
 #Generate pages recursively
-def generate_pages_recursive(dir_path_content, template_path, dest_dir_path):
-    print(dest_dir_path)
+def generate_pages_recursive(dir_path_content, template_path, dest_dir_path, basepath):
     if os.path.exists(dir_path_content):
         #Get files/directories in current directory
         currentPath = os.listdir(dir_path_content)
         #loop through items
         if not os.path.exists(dest_dir_path):
+            #print(dest_dir_path)
+            #input()
             os.mkdir(dest_dir_path)
         for item in currentPath:
             itemPath = os.path.join(dir_path_content, item)
@@ -106,8 +116,10 @@ def generate_pages_recursive(dir_path_content, template_path, dest_dir_path):
                 #Get title of markdown
                 title = extract_title(itemPath)
                 #Replace title and content with extracted title and generated content
-                temp = temp_content.replace("{{ Title }}", title)
-                contentReplace = temp.replace("{{ Content }}", mdHTML)
+                contentReplace = temp_content.replace("{{ Title }}", title)
+                contentReplace = contentReplace.replace("{{ Content }}", mdHTML)
+                contentReplace = contentReplace.replace('href="/', 'href="' + basepath)
+                contentReplace = contentReplace.replace('src="/', 'src="' + basepath)
                 #Create path to place new file
                 newFile = item.replace(".md", ".html")
                 dest_dir_path_item = dest_dir_path + newFile
@@ -120,23 +132,12 @@ def generate_pages_recursive(dir_path_content, template_path, dest_dir_path):
                 #Create new destination path
                 new_dest = dest_dir_path + item + "/"
                 #Recursively iterate over folders
-                generate_pages_recursive(new_dir_path, template_path, new_dest)
+                generate_pages_recursive(new_dir_path, template_path, new_dest, basepath)
                 
 
     else:
         raise Exception("Path does not exist")
     
-    
-
-
-
-
-
-
-
-
-
-
     
 
 if __name__ == "__main__":
